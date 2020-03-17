@@ -1,10 +1,23 @@
 require('dotenv').config();
 const express = require("express");
 const got = require("got");
+const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3003;
 
-app.get("/", async (req, res) => {
+const whitelist = ["http://localhost:3000", "https://k4-nearby-shops.herokuapp.com"];
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (whitelist.indexOf(origin) !== -1) {
+            callback(null, true)
+        } else {
+            callback(new Error('Not allowed by CORS'))
+        }
+    }
+};
+
+
+app.get("/", cors(corsOptions), async (req, res) => {
     const shopIds = [
         "ChIJY9sg1U_xPUcRMJUmEHnfnDg", // Żabka
         "ChIJcVatSK_xPUcRnV0LvEKspkE", // Delikatesy Centrum
@@ -15,13 +28,17 @@ app.get("/", async (req, res) => {
     try {
         const shopData = [];
 
-        for(const shopId of shopIds) {
-            const data = await got(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${shopId}&fields=name,rating,opening_hours&key=${process.env.API_KEY}`);
-            shopData.push(JSON.parse(data.body));
+        for (const shopId of shopIds) {
+            const response = await got(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${shopId}&fields=name,rating,opening_hours&key=${process.env.API_KEY}`);
+            const data = JSON.parse(response.body);
+            const filteredData = {
+                name: data.result.name,
+                openingHours: data.result.opening_hours
+            };
+            shopData.push(filteredData);
         }
-            console.log(shopData);
-            res.send(shopData);
-    } catch(error) {
+        res.send(shopData);
+    } catch (error) {
         console.log(error);
         res.sendStatus(500);
     }
