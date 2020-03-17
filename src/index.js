@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require("express");
 const got = require("got");
 const app = express();
-const port = 3001;
+const port = 3003;
 
 app.get("/", async (req, res) => {
     const shopIds = [
